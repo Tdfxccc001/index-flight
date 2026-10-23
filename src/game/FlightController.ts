@@ -25,7 +25,18 @@ export const initialFlight = (): Flight => ({
 });
 export const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 export function fly(s: Flight, input: Control, dt: number): Flight {
-  const n = { ...s };
+  return flyInto(s, input, dt, initialFlight());
+}
+/** Search reuses two scratch states; s and n must be distinct. */
+export function flyInto(s: Flight, input: Control, dt: number, n: Flight): Flight {
+  n.x = s.x;
+  n.y = s.y;
+  n.vx = s.vx;
+  n.vy = s.vy;
+  n.energy = s.energy;
+  n.load = s.load;
+  n.stall = s.stall;
+  n.recover = s.recover;
   let { x, y } = input;
   const len = Math.hypot(x, y);
   if (len > 1) {

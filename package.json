@@ -1,6 +1,6 @@
 {
   "name": "index-flight",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build && node scripts/finalize-build.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test": "tsx --test tests/*.test.ts",
-    "test:pages": "node scripts/pages-browser-test.mjs"
+    "test:pages": "node scripts/pages-browser-test.mjs",
+    "test:pages-performance": "node scripts/pages-performance.mjs --hardware"
   },
   "dependencies": {
     "three": "0.180.0"

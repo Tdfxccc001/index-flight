@@ -1,5 +1,5 @@
 import { B } from '../config/balance';
-import { fly, clamp, type Control, type Flight } from './FlightController';
+import { flyInto, initialFlight, clamp, type Control, type Flight } from './FlightController';
 import {
   boundary,
   prepareCollision,
@@ -38,6 +38,8 @@ export function findPath(
   beamSize: number = B.plannerBeam,
 ): PlanResult {
   const started = performance.now();
+  const scratchA = initialFlight(),
+    scratchB = initialFlight();
   let visited = 0;
   const finish = (safe: boolean, path: PlanPoint[] = [], end?: Flight): PlanResult => ({
     safe,
@@ -109,20 +111,36 @@ export function findPath(
             );
       // Holding neutral is essential for braking and for low-energy recovery.
       if (elapsed >= B.reactionTime) inputs.push({ x: 0, y: 0 });
+      // Several distant lanes clamp to the very same steering input. Simulate
+      // that branch once per parent, but retain every choice in its original
+      // order so stable sorting, pruning, certificates and visited stay exact.
+      const simulations = new Map<string, { state?: Flight; ticks: number }>();
       for (const control of inputs) {
+        const key = `${Object.is(control.x, -0) ? '-0' : control.x}:${Object.is(control.y, -0) ? '-0' : control.y}`;
+        const cached = simulations.get(key);
         let s = node.state,
           ok = true;
-        for (let sub = 0; sub < B.plannerTicks; sub++) {
-          const next = fly(s, control, B.dt);
-          visited++;
-          if (
-            boundary(next, B.plannerMargin) ||
-            collisionSteps[sub].some((geometry) => hitsPrepared(s, next, geometry))
-          ) {
-            ok = false;
-            break;
+        if (cached) {
+          visited += cached.ticks;
+          ok = cached.state !== undefined;
+          if (cached.state) s = cached.state;
+        } else {
+          const before = visited;
+          for (let sub = 0; sub < B.plannerTicks; sub++) {
+            const next = flyInto(s, control, B.dt, sub % 2 === 0 ? scratchA : scratchB);
+            visited++;
+            if (
+              boundary(next, B.plannerMargin) ||
+              collisionSteps[sub].some((geometry) => hitsPrepared(s, next, geometry))
+            ) {
+              ok = false;
+              break;
+            }
+            s = next;
           }
-          s = next;
+          // Scratch states are overwritten by the next unique branch.
+          if (ok) s = { ...s };
+          simulations.set(key, { state: ok ? s : undefined, ticks: visited - before });
         }
         if (ok) {
           const lane = Math.min(...targets.map((x) => Math.abs(x - s.x)));
@@ -133,6 +151,7 @@ export function findPath(
             s.load * 0.16 +
             (s.stall > 0 ? 1 : 0) +
             Math.abs(s.vx) * 0.025;
+          // Only retained branch endpoints need ownership beyond this iteration.
           choices.push({ state: s, parent: node, control, rank });
         }
       }

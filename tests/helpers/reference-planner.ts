@@ -1,6 +1,6 @@
 // Frozen pre-optimization implementation: preserve search order and numeric results.
 import { B } from '../../src/config/balance';
-import { fly, clamp, type Control, type Flight } from '../../src/game/FlightController';
+import { fly, clamp, type Control, type Flight } from './reference-flight';
 import { boundary, hits } from './reference-collision';
 import { forwardSpeed } from '../../src/game/DifficultyDirector';
 import { columnX, type Row } from '../../src/game/Obstacles';

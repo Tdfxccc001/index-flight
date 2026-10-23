@@ -38,6 +38,7 @@ export class Game {
   state: 'loading' | 'home' | 'ready' | 'playing' | 'paused' | 'dying' | 'dead' = 'loading';
   private pausedFromReady = false;
   private overlayRendered = false;
+  private waitingRendered = false;
   crashEndsAt = 0;
   market!: Market;
   lastMarketDate = '';
@@ -73,9 +74,11 @@ export class Game {
     this.ui.onAction = (a) => this.action(a);
     window.addEventListener('resize', () => {
       this.overlayRendered = false;
+      this.waitingRendered = false;
     });
     this.ui.root.addEventListener('input', () => {
       this.overlayRendered = false;
+      this.waitingRendered = false;
     });
     this.input = new InputManager(
       document.querySelector('#joystick')!,
@@ -126,6 +129,7 @@ export class Game {
     this.world.effects.reset();
     this.crashEndsAt = 0;
     this.stagedSpawn = undefined;
+    this.waitingRendered = false;
     this.planCommitTime = Infinity;
     this.pendingRow = undefined;
     this.generation++;
@@ -570,7 +574,15 @@ export class Game {
     };
     // Cache the static scene beneath menus so the CSS blur needs no new 3D frames.
     const overlay = ['paused', 'dead'].includes(this.ui.state) || this.ui.state === 'settings';
-    if (!overlay || !this.overlayRendered)
+    const waiting =
+      this.state === 'playing' &&
+      this.planning &&
+      !this.stagedSpawn &&
+      this.time >= this.planCommitTime;
+    // A commit wait has no new physics to display. Redrawing the same scene
+    // saturates software/integrated GPUs and competes with the worker that must
+    // finish before play can continue. Keep input and rAF alive while it works.
+    if ((!overlay || !this.overlayRendered) && (!waiting || !this.waitingRendered))
       this.world.render(
         visual,
         this.rows,
@@ -583,6 +595,7 @@ export class Game {
         this.state === 'home' && this.ui.state === 'home',
       );
     this.overlayRendered = overlay;
+    this.waitingRendered = waiting;
     this.audio.levels(
       this.ui.settings.sound,
       this.ui.settings.music,

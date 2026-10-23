@@ -1,13 +1,41 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { B } from '../src/config/balance';
-import { initialFlight } from '../src/game/FlightController';
+import { initialFlight, fly, flyInto } from '../src/game/FlightController';
+import { fly as referenceFly } from './helpers/reference-flight';
 import { hits, prepareCollision, hitsPrepared, swept } from '../src/game/CollisionSystem';
 import { hits as referenceHits, swept as referenceSwept } from './helpers/reference-collision';
 import { findPath } from '../src/game/SpawnPlanner';
 import { findPath as referencePath } from './helpers/reference-planner';
 import { plannerCases } from './helpers/planner-cases';
 import { Random } from '../src/game/SeededRandom';
+
+test('reused flight buffers preserve every field and never mutate the input', () => {
+  const rng = new Random(4187);
+  const buffers = [initialFlight(), initialFlight()];
+  let state = initialFlight();
+  for (let i = 0; i < 12000; i++) {
+    if (i % 100 === 0)
+      state = {
+        ...initialFlight(),
+        x: rng.range(-10, 10),
+        y: rng.range(0, 13),
+        energy: rng.range(0, 100),
+        load: rng.range(0, 3),
+        stall: i % 200 ? 0.5 : 0,
+        recover: i % 300 === 0,
+      };
+    const control = { x: rng.range(-1, 1), y: rng.range(-1, 1) };
+    const dt = i % 3 ? B.dt : 1 / 120;
+    const before = { ...state };
+    const expected = referenceFly(state, control, dt);
+    assert.deepEqual(fly(state, control, dt), expected);
+    const next = flyInto(state, control, dt, buffers[i % 2]);
+    assert.deepEqual(next, expected);
+    assert.deepEqual(state, before);
+    state = next;
+  }
+});
 
 test('optimized planner preserves exact certificates, visited count and end state', () => {
   for (const c of plannerCases()) {
