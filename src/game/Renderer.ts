@@ -3,10 +3,11 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MarketAnnotations } from './MarketAnnotations';
 import * as THREE from 'three';
 import { CameraController } from './CameraController';
-import { columnX, type Row } from './Obstacles';
+import { columnPose, type Row } from './Obstacles';
 import type { Flight } from './FlightController';
 import type { Settings } from '../ui/Settings';
 import { B } from '../config/balance';
+import { HUD } from '../config/hud';
 import { FlightEffects } from './FlightEffects';
 import { AlignmentGuide } from './AlignmentGuide';
 export class WorldRenderer {
@@ -31,6 +32,11 @@ export class WorldRenderer {
   propeller = new THREE.Group();
   pool = 128;
   private color = new THREE.Color();
+  private planeColors = new Map<
+    THREE.MeshStandardMaterial | THREE.MeshBasicMaterial,
+    THREE.Color
+  >();
+  private energyWarningColor = new THREE.Color(0xff3333);
   private slowFrames = 0;
   private lastEffects = true;
   pixelRatio = 1;
@@ -194,6 +200,16 @@ export class WorldRenderer {
     );
     this.propeller.position.z = -1;
     this.plane.add(this.propeller);
+    this.plane.traverse((part) => {
+      if (!(part instanceof THREE.Mesh)) return;
+      const materials = Array.isArray(part.material) ? part.material : [part.material];
+      for (const material of materials)
+        if (
+          material instanceof THREE.MeshStandardMaterial ||
+          material instanceof THREE.MeshBasicMaterial
+        )
+          this.planeColors.set(material, material.color.clone());
+    });
     this.stage.add(this.plane);
     this.effects = new FlightEffects(this.stage);
     this.guide = new AlignmentGuide(this.stage);
@@ -221,6 +237,10 @@ export class WorldRenderer {
     this.columns.material = settings.effects ? this.acrylicMaterial : this.lightColumnMaterial;
     if (settings.effects && !this.lastEffects) this.resize();
     this.lastEffects = settings.effects;
+    // Share the HUD's red threshold; the logical clock also freezes the flash on pause.
+    const warning = s.energy < HUD.energyCritical && Math.floor(time * 4) % 2 === 1;
+    for (const [material, original] of this.planeColors)
+      material.color.copy(warning ? this.energyWarningColor : original);
     if (!settings.effects && this.pixelRatio > 1) {
       this.pixelRatio = 1;
       this.renderer.setPixelRatio(1);
@@ -230,24 +250,30 @@ export class WorldRenderer {
     for (const row of rows)
       for (const c of row.columns) {
         if (count >= this.pool) break;
-        const x = columnX(row, c);
-        this.dummy.position.set(x, c.height / 2, row.z);
+        const { x, y, angle } = columnPose(row, c);
+        const co = Math.cos(angle),
+          si = Math.sin(angle);
+        this.dummy.position.set(x, y, row.z);
         this.dummy.scale.set(c.width, c.height, B.thickness);
-        this.dummy.rotation.set(0, 0, 0);
+        this.dummy.rotation.set(0, 0, angle);
         this.dummy.updateMatrix();
         this.columns.setMatrixAt(count, this.dummy.matrix);
         const up = settings.reverse ? 0xc75767 : 0x219e83,
           down = settings.reverse ? 0x219e83 : 0xc75767;
         this.color.setHex(c.direction === 'up' ? up : c.direction === 'down' ? down : 0x8a9faf);
         this.columns.setColorAt(count, this.color);
-        this.dummy.position.y = c.height + 0.025;
+        this.dummy.position.set(
+          x - si * (c.height / 2 + 0.025),
+          y + co * (c.height / 2 + 0.025),
+          row.z,
+        );
         this.dummy.scale.set(c.width + 0.035, 0.055, B.thickness + 0.035);
         this.dummy.updateMatrix();
         this.edges.setMatrixAt(count, this.dummy.matrix);
         for (let side = 0; side < 2; side++) {
           this.dummy.position.set(
-            x + (side === 0 ? -1 : 1) * (c.width / 2 - 0.025),
-            c.height / 2,
+            x + co * (side === 0 ? -1 : 1) * (c.width / 2 - 0.025),
+            y + si * (side === 0 ? -1 : 1) * (c.width / 2 - 0.025),
             row.z + B.thickness / 2 + 0.012,
           );
           this.dummy.scale.set(0.022, c.height, 0.022);
@@ -255,13 +281,6 @@ export class WorldRenderer {
           this.ribs.setMatrixAt(count * 2 + side, this.dummy.matrix);
         }
         count++;
-        if (row.kind === 'rush' || row.kind === 'block')
-          for (let j = 0; j < 3; j++) {
-            this.dummy.position.set(x, 0.45 + j * 0.48, row.z + 1.065);
-            this.dummy.scale.set(c.width * 0.9, 0.1, 0.04);
-            this.dummy.updateMatrix();
-            this.specials.setMatrixAt(marks++, this.dummy.matrix);
-          }
       }
     this.columns.count = this.edges.count = count;
     this.ribs.count = count * 2;

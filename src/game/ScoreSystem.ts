@@ -23,6 +23,8 @@ export class ScoreSystem {
     const cols = row.columns.map((c) => ({ ...c, x: columnX(row, c) })).sort((a, b) => a.x - b.x);
     const best = !row.passage || Math.abs(row.z) < row.passage.sampleZ;
     if (best) row.passage = { ...row.passage, x: s.x, y: s.y, sampleZ: Math.abs(row.z) };
+    // Upright top/gap formulas do not describe an airborne rotating surface.
+    if (row.kind === 'beam' || row.kind === 'rotor') return;
     for (const c of cols) {
       for (const box of [B.body, B.wing]) {
         if (Math.abs(row.z) > B.thickness / 2 + box.z) continue;
@@ -58,7 +60,8 @@ export class ScoreSystem {
     row.scored = true;
     if (row.gap) this.gaps++;
     const p: NonNullable<Row['passage']> = row.passage || { x: s.x, y: s.y, sampleZ: 0 };
-    const special = row.kind === 'rush' || row.kind === 'block';
+    const special =
+      row.kind === 'rush' || row.kind === 'block' || row.kind === 'beam' || row.kind === 'rotor';
     const kind = special ? row.kind : row.gap ? 'gap' : row.top < B.topMargin ? 'top' : 'side';
     const target = {
       kind,
@@ -98,8 +101,8 @@ export class ScoreSystem {
       this.edges++;
       labels.push('机翼擦边');
     }
-    if (row.kind === 'rush' || row.kind === 'block') {
-      reward += row.kind === 'rush' ? B.rushScore : B.blockScore;
+    if (special) {
+      reward += row.kind === 'block' ? B.blockScore : B.rushScore;
       this.specials++;
       labels.push('完美闪避');
     }

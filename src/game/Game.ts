@@ -1,4 +1,5 @@
 import { PerformanceDiagnostics } from './PerformanceDiagnostics';
+import { airObstacle, rotationSlot } from './AirObstacles';
 import { HUD } from '../config/hud';
 import { crossedMarketDay } from './CurrentMarket';
 import { nextMarketRowZ, needsMarketRow } from './RowSpacing';
@@ -66,10 +67,11 @@ export class Game {
         safe: boolean;
         startTime: number;
         startDistance: number;
+        shiftedIds?: number[];
       }
     | undefined;
   planCommitTime = Infinity;
-  constructor() {
+  constructor(readonly allObstaclesUnlocked = false) {
     this.world = new WorldRenderer(this.ui.root);
     this.ui.onAction = (a) => this.action(a);
     window.addEventListener('resize', () => {
@@ -149,7 +151,10 @@ export class Game {
     this.rowNumber = 0;
     this.accumulator = 0;
     this.layout = new Random(this.seed ^ 0x294a);
-    this.director = new DifficultyDirector(new Random(this.seed ^ 0x321));
+    this.director = new DifficultyDirector(
+      new Random(this.seed ^ 0x321),
+      this.allObstaclesUnlocked,
+    );
     this.lastMarketDate = this.market.baseline.date;
     this.sequence = new MarketSequence(this.market.records, new Random(this.seed ^ 0x111));
     this.input.reset();
@@ -215,6 +220,7 @@ export class Game {
     }
     let channels: number[] = [...B.lanes];
     const ordinaryColumns = candidate?.columns.map((c) => ({ ...c }));
+    let shiftedIds: number[] = [];
     if (kind === 'moving' && candidate) {
       candidate.kind = 'moving';
       candidate.columns.forEach((c, i) => {
@@ -234,6 +240,21 @@ export class Game {
           : 1;
       candidate.lateral =
         sign * (B.movingBaseSpeed + Math.min(B.movingMaxIncrease, this.time / B.movingRamp));
+    } else if ((kind === 'beam' || kind === 'rotor') && !normal) {
+      const day = this.market.records[this.layout.int(this.market.records.length)];
+      candidate = airObstacle(kind, this.nextId++, this.time, this.layout, day);
+      if (kind === 'rotor') {
+        const slot = rotationSlot(this.rows);
+        if (!slot) candidate = undefined;
+        else {
+          candidate.z = slot.z;
+          shiftedIds = slot.shiftedIds;
+        }
+      }
+      if (candidate) {
+        candidate.spawnState = { x: this.flight.x, y: this.flight.y };
+        candidate.threatened = hits(this.flight, this.flight, { ...candidate, z: 0 }, 0, 0);
+      }
     } else if ((kind === 'rush' || kind === 'block') && !normal) {
       const reachableBlock =
         kind === 'block' &&
@@ -296,10 +317,18 @@ export class Game {
       active,
       () => this.nextId++,
     );
+    for (const row of batch)
+      for (const column of row.columns) {
+        if (!column.day && !column.quoteDay) {
+          column.quoteDay = this.market.records[this.layout.int(this.market.records.length)];
+          column.direction = column.quoteDay.direction;
+        }
+      }
     const startedDistance = this.distance,
       startedTime = this.time;
     const snapshotFlight = { ...this.flight },
       snapshotRows = structuredClone(this.rows);
+    for (const row of snapshotRows) if (shiftedIds.includes(row.id)) row.z -= B.rowSpacing;
     const held = this.input.read(
       this.ui.settings.sensitivity,
       this.ui.settings.invertKeyboard,
@@ -362,6 +391,7 @@ export class Game {
       safe: result.safe,
       startTime: startedTime,
       startDistance: startedDistance,
+      shiftedIds: result.safe ? shiftedIds : [],
     };
   }
   commitSpawn() {
@@ -376,6 +406,7 @@ export class Game {
     const p = this.stagedSpawn,
       c = p.candidate;
     if (c) {
+      for (const row of this.rows) if (p.shiftedIds?.includes(row.id)) row.z -= B.rowSpacing;
       if (c.kind === 'rush' || c.kind === 'block') this.director.encounters++;
       for (const c of [p.candidate!, ...(p.companions || [])]) {
         c.z += this.distance - p.startDistance + c.extraSpeed * (this.time - p.startTime);
@@ -523,7 +554,7 @@ export class Game {
     if (!this.planning && this.time - this.lastSpecialCheck > B.spawnPoll) {
       this.lastSpecialCheck = this.time;
       if (needsMarketRow(this.rows)) void this.planSpawn(true);
-      else if (this.time > B.rushUnlock) void this.planSpawn(false);
+      else if (this.allObstaclesUnlocked || this.time > B.rushUnlock) void this.planSpawn(false);
     }
     if (this.time > this.rewardUntil) this.ui.reward.textContent = '';
   }

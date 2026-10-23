@@ -23,6 +23,7 @@ export function composeEncounter(
   nextId: () => number,
 ): Row[] {
   primary.encounter = 'single';
+  if (primary.kind === 'beam' || primary.kind === 'rotor') return [primary];
   if (primary.kind === 'normal' || time < B.encounterUnlock) return [primary];
   if (primary.kind === 'moving') {
     primary.encounter = 'counterflow';

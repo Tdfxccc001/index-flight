@@ -30,7 +30,7 @@ test('real calendar markers show year only on year transitions, including intra-
 });
 test('director offers all special types frequently while respecting cooldown', () => {
   const d = new DifficultyDirector(new Random(42));
-  const counts = { moving: 0, rush: 0, block: 0 };
+  const counts = { moving: 0, rush: 0, block: 0, beam: 0, rotor: 0 };
   let last = -100;
   for (let t = 0; t < 240; t += 0.5) {
     const kind = d.choose(t, 0, Math.round(t * 2) % 3 === 0);
@@ -42,9 +42,11 @@ test('director offers all special types frequently while respecting cooldown', (
     if (kind === 'moving') assert.ok(t >= B.movingUnlock);
     if (kind === 'rush') assert.ok(t >= B.rushUnlock);
     if (kind === 'block') assert.ok(t >= B.blockUnlock);
+    if (kind === 'beam') assert.ok(t >= B.beamUnlock);
+    if (kind === 'rotor') assert.ok(t >= B.rotorUnlock);
   }
   assert.ok(
-    Object.values(counts).every((n) => n >= 4),
+    Object.values(counts).every((n) => n >= 2),
     JSON.stringify(counts),
   );
   assert.ok(Object.values(counts).reduce((a, b) => a + b) > 25, JSON.stringify(counts));

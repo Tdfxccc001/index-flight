@@ -2,7 +2,7 @@ import { watchBuildStatus } from './ui/BuildStatus';
 import './style.css';
 import { Game } from './game/Game';
 try {
-  const game = new Game();
+  const game = new Game(import.meta.env.DEV && location.pathname === '/local-tests/obstacles.html');
   watchBuildStatus();
   if (import.meta.env.DEV) (window as unknown as { __game: Game }).__game = game;
 } catch (e) {

@@ -1,7 +1,7 @@
 import { quoteOpacity } from './MobilePresentation';
 import * as THREE from 'three';
 import type { Day } from './MarketData';
-import { columnX, type Row, type Column } from './Obstacles';
+import { columnPose, type Row, type Column } from './Obstacles';
 import { B } from '../config/balance';
 export interface PeriodMarker {
   label: string;
@@ -234,6 +234,7 @@ export class MarketAnnotations {
     ground: boolean,
     opacity: number,
     count: number,
+    angle = 0,
   ) {
     const layout = this.layout(row, label, width, ground);
     let cursor = x - width / 2;
@@ -247,8 +248,12 @@ export class MarketAnnotations {
         const px = rightVertex[k] ? right : left;
         const py = topVertex[k] ? glyph.halfHeight : -glyph.halfHeight;
         const offset = count * 18 + k * 3;
-        this.positions[offset] = px;
-        this.positions[offset + 1] = ground ? y : y + py;
+        this.positions[offset] = ground
+          ? px
+          : x + (px - x) * Math.cos(angle) - py * Math.sin(angle);
+        this.positions[offset + 1] = ground
+          ? y
+          : y + (px - x) * Math.sin(angle) + py * Math.cos(angle);
         this.positions[offset + 2] = ground ? z - py : z;
         this.colors[offset] = this.tint.r;
         this.colors[offset + 1] = this.tint.g;
@@ -268,21 +273,23 @@ export class MarketAnnotations {
     for (const r of rows) {
       const opacity = quoteOpacity(r.z, portrait);
       if (showChanges && opacity > 0)
-        for (const c of r.columns)
-          if (c.day && badges < 128) {
-            const x = columnX(r, c),
-              y = Math.max(0.8, c.height - 0.85),
+        for (const c of r.columns) {
+          const day = c.day ?? c.quoteDay;
+          if (day && badges < 128) {
+            const pose = columnPose(r, c);
+            const offsetY = Math.max(0.8, c.height - 0.85) - c.height / 2;
+            const x = pose.x - Math.sin(pose.angle) * offsetY,
+              y = pose.y + Math.cos(pose.angle) * offsetY,
               z = r.z + B.thickness / 2;
             const up = reverse ? 0xff8292 : 0x68efd0,
               down = reverse ? 0x68efd0 : 0xff8292;
             let quote = this.quoteLabels.get(c);
-            if (!quote || quote.change !== c.day.change || quote.direction !== c.day.direction) {
-              const label = changeLabel(c.day);
-              const arrow =
-                c.day.direction === 'up' ? '▲ ' : c.day.direction === 'down' ? '▼ ' : '';
+            if (!quote || quote.change !== day.change || quote.direction !== day.direction) {
+              const label = changeLabel(day);
+              const arrow = day.direction === 'up' ? '▲ ' : day.direction === 'down' ? '▼ ' : '';
               quote = {
-                change: c.day.change,
-                direction: c.day.direction,
+                change: day.change,
+                direction: day.direction,
                 label,
                 text: arrow + label,
               };
@@ -291,6 +298,7 @@ export class MarketAnnotations {
             this.labels.push(quote.label);
             const width = Math.min(c.width * 0.84, 3);
             this.dummy.position.set(x, y, z + 0.036);
+            this.dummy.rotation.set(0, 0, pose.angle);
             this.dummy.scale.set(Math.min(c.width * 0.94, 3.4), 0.62 / B.visualHeightScale, 1);
             this.dummy.updateMatrix();
             this.badgeOpacity[badges] = opacity;
@@ -302,12 +310,14 @@ export class MarketAnnotations {
               y,
               z + 0.045,
               width,
-              c.day.direction === 'up' ? up : c.day.direction === 'down' ? down : 0xc4d5df,
+              day.direction === 'up' ? up : day.direction === 'down' ? down : 0xc4d5df,
               false,
               opacity,
               count,
+              pose.angle,
             );
           }
+        }
       for (const marker of r.periods || []) {
         this.labels.push(marker.label);
         count = this.writeText(
