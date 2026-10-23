@@ -1,0 +1,81 @@
+{
+  "count": 1160,
+  "fromDate": "2022-01-04",
+  "toDate": "2026-10-21",
+  "sha256": "e1087736f7c94aacdd096af46e021bb3744347ceb116a73fd7deeadd9a6109cc",
+  "crossChecked": 1160,
+  "missing": [],
+  "extra": [],
+  "mismatches": [],
+  "sources": [
+    "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000001%2Cday%2C2021-12-31%2C2021-12-31%2C640%2Cqfq",
+    "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000001%2Cday%2C2022-01-01%2C2022-12-31%2C640%2Cqfq",
+    "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000001%2Cday%2C2023-01-01%2C2023-12-31%2C640%2Cqfq",
+    "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000001%2Cday%2C2024-01-01%2C2024-12-31%2C640%2Cqfq",
+    "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000001%2Cday%2C2025-01-01%2C2025-12-31%2C640%2Cqfq",
+    "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000001%2Cday%2C2026-01-01%2C2026-10-21%2C640%2Cqfq",
+    "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=sh000001&scale=240&ma=no&datalen=2000"
+  ],
+  "samples": [
+    {
+      "date": "2022-01-04",
+      "close": 3632.33,
+      "change": -7.45,
+      "direction": "down"
+    },
+    {
+      "date": "2022-06-30",
+      "close": 3398.62,
+      "change": 37.1,
+      "direction": "up"
+    },
+    {
+      "date": "2022-12-19",
+      "close": 3107.12,
+      "change": -60.74,
+      "direction": "down"
+    },
+    {
+      "date": "2023-06-13",
+      "close": 3233.67,
+      "change": 4.84,
+      "direction": "up"
+    },
+    {
+      "date": "2023-12-04",
+      "close": 3022.91,
+      "change": -8.73,
+      "direction": "down"
+    },
+    {
+      "date": "2024-05-30",
+      "close": 3091.68,
+      "change": -19.34,
+      "direction": "down"
+    },
+    {
+      "date": "2024-11-20",
+      "close": 3367.99,
+      "change": 21.98,
+      "direction": "up"
+    },
+    {
+      "date": "2025-05-16",
+      "close": 3367.46,
+      "change": -13.36,
+      "direction": "down"
+    },
+    {
+      "date": "2025-11-05",
+      "close": 3969.25,
+      "change": 9.06,
+      "direction": "up"
+    },
+    {
+      "date": "2026-04-29",
+      "close": 4107.51,
+      "change": 28.87,
+      "direction": "up"
+    }
+  ]
+}

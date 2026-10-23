@@ -1,0 +1,17 @@
+node_modules/
+dist/
+test-results/
+.vite/
+*.log
+
+# Local credentials and private release/audit material.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.npmrc
+__pycache__/
+release-private/

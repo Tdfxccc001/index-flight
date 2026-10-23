@@ -1,0 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { defineConfig } from 'vite';
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
+export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify(version) },
+  base: './',
+  server: { port: 5173 },
+  build: { rollupOptions: { output: { manualChunks: { three: ['three'] } } } },
+});

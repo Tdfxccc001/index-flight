@@ -1,0 +1,26 @@
+[
+  {
+    "file": "RobotoMono.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/robotomono/RobotoMono%5Bwght%5D.ttf",
+    "bytes": 183700,
+    "sha256": "66a80e79d17e4c7cabd162e2916578a4cc08fd19eef6e2a643305eae9c567b2b"
+  },
+  {
+    "file": "RobotoMono-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/robotomono/OFL.txt",
+    "bytes": 4395,
+    "sha256": "50ab8dd54680d3473f649c9db86fece88434d097c7834475c1c72d2f8c429215"
+  },
+  {
+    "file": "Manrope.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/Manrope%5Bwght%5D.ttf",
+    "bytes": 164700,
+    "sha256": "3ae11c49db0455a3cc33e37d380f20fdb8c7f8b41dc07625c177e3d87a9d6ae6"
+  },
+  {
+    "file": "Manrope-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt",
+    "bytes": 4387,
+    "sha256": "58172e0c0fac2cda8a37b348164bb55e44b0e69051e557e92b1d3f6910141f7b"
+  }
+]
