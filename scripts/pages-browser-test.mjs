@@ -50,6 +50,7 @@ try {
     assert.equal(await page.evaluate(() => window.__game), undefined);
     assert.equal(await page.evaluate(() => new URL(navigator.serviceWorker.controller.scriptURL).pathname), mount + 'sw.js');
     await page.getByRole('button', { name: '开始飞行' }).click();
+    if (viewport.width >= 500) await page.keyboard.press('Space');
     await page.waitForFunction(() => Number(document.querySelector('#score')?.textContent.replaceAll(',', '')) > 0);
     await page.waitForTimeout(600);
     fs.mkdirSync('test-results', { recursive: true });
@@ -59,6 +60,7 @@ try {
     await page.getByRole('button', { name: '开始飞行' }).waitFor();
     await page.waitForFunction(() => document.querySelector('#build-status')?.dataset.connection === 'offline');
     await page.getByRole('button', { name: '开始飞行' }).click();
+    if (viewport.width >= 500) await page.keyboard.press('Space');
     await page.waitForFunction(() => Number(document.querySelector('#score')?.textContent.replaceAll(',', '')) > 0);
     assert.deepEqual(errors, [], 'runtime errors');
     assert.deepEqual(external, [], 'external runtime dependencies');
