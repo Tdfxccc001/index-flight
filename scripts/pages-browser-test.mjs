@@ -21,7 +21,7 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-const base = `http://127.0.0.1:${server.address().port}${mount}`;
+const base = process.env.TEST_URL || `http://127.0.0.1:${server.address().port}${mount}`;
 let browser;
 try {
   browser = await chromium.launch({ headless: true,

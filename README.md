@@ -3,6 +3,8 @@
 Vite + TypeScript + Three.js 纯前端飞行游戏。无需账号或后端。
 WASD / 方向键控制；鼠标或触屏按住拖动。Esc 暂停。
 
+在线游玩：https://tdfxccc001.github.io/index-flight/
+
 ## 本地开发与验证
 
 Node.js 24，pnpm 11.25.0：
@@ -22,6 +24,8 @@ pnpm preview
 推送 main 自动测试、构建并发布；Actions 中也可手动运行。
 拉取请求只测试构建，没有 Pages 发布权限。
 默认网址为 https://<owner>.github.io/<repository>/ 。无需购买域名或服务器。
+以后在此发布仓库中修改代码并推送 main，网站会在检查通过后自动更新。
+本地原开发仓库独立保留；在原目录修改不会自动同步到本仓库。
 所有字体、行情 JSON、脚本均随站点提供；首次完整加载后支持离线。
 高分与设置仅保存在当前浏览器。
 
